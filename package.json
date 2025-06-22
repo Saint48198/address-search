@@ -1,5 +1,5 @@
 {
-  "name": "${PROJECT_NAME}",
+  "name": "addressSearch",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
