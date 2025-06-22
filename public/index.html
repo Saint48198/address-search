@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Address Lookup</title>
+    <script type="module" src="./address-search.js"></script>
+    <style>
+        address-search {
+            display: block;
+            width: 300px;
+            margin: 50px auto;
+        }
+    </style>
+</head>
+<body>
+<address-search></address-search>
+
+<script>
+    document.querySelector('address-search').addEventListener('address-selected', (e) => {
+        console.log('Selected address:', e.detail);
+    });
+</script>
+</body>
+</html>
