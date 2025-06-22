@@ -11,10 +11,23 @@ class AddressSearch extends HTMLElement {
           position: relative;
           width: 100%;
         }
+        .input-wrapper {
+          display: flex;
+          align-items: center;
+          position: relative;
+          gap: 5px;
+        }
         input {
+          flex: 1;
           width: 100%;
           box-sizing: border-box;
-          padding: 10px;
+          padding: 10px 36px 10px 10px;
+        }
+        button.action {
+          width: 30px;
+          padding: 10px 0;
+          margin: 0;
+          text-align: center;
         }
         ul {
           position: absolute;
@@ -39,7 +52,10 @@ class AddressSearch extends HTMLElement {
         }
       </style>
       <div class="container">
-        <input type="text" placeholder="Search address..." />
+        <div class="input-wrapper">
+            <input type="text" placeholder="Search address..." />
+            <button class="action" type="button" title="Clear or custom action">✖</button>
+        </div>
         <ul hidden></ul>
       </div>
     `;
@@ -58,7 +74,7 @@ class AddressSearch extends HTMLElement {
         const value = this.input.value.trim();
         this.selectedIndex = -1;
 
-        if (value.length < 2) {
+        if (value.length < 3) {
             this.clearList();
             return;
         }
@@ -69,11 +85,46 @@ class AddressSearch extends HTMLElement {
         }, 300);
     }
 
+    extractStreetAndNumber(input) {
+        const match = input.match(/^(\d+)\s+(.+)$/);
+        if (!match) return { num: '', street: input };
+        return { num: match[1], street: match[2] };
+    }
+
     fetchSuggestions(query) {
-        fetch(`/api/address-suggest?q=${encodeURIComponent(query)}`)
-            .then((res) => res.json())
-            .then((data) => this.renderList(data))
-            .catch(() => this.clearList());
+        const { street } = this.extractStreetAndNumber(query);
+        const num = 20;
+
+        if (!num || !street) {
+            this.clearList();
+            return;
+        }
+
+        // Cancel previous request
+        if (this.abortController) {
+            this.abortController.abort();
+        }
+
+        this.abortController = new AbortController();
+
+        fetch(`/api/address-suggest?street=${encodeURIComponent(street)}&num=${num}`, {
+            signal: this.abortController.signal
+        })
+            .then(res => res.json())
+            .then(data => {
+                const suggestions = (data.rows || []).map(r => ({
+                    label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
+                    raw: r
+                }));
+                this.renderList(suggestions);
+            })
+            .catch(err => {
+                console.error('API error:', err);
+                if (err.name !== 'AbortError') {
+                    console.error('API error:', err);
+                    this.clearList();
+                }
+            });
     }
 
     renderList(suggestions) {
