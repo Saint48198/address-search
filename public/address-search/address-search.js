@@ -92,8 +92,7 @@ class AddressSearch extends HTMLElement {
     }
 
     fetchSuggestions(query) {
-        const { street } = this.extractStreetAndNumber(query);
-        const num = 20;
+        const { num, street } = this.extractStreetAndNumber(query);
 
         if (!num || !street) {
             this.clearList();
@@ -106,14 +105,18 @@ class AddressSearch extends HTMLElement {
         }
 
         this.abortController = new AbortController();
-
-        fetch(`/api/address-suggest?street=${encodeURIComponent(street)}&num=${num}`, {
+ 
+        var hostname    = window.location.hostname ?? "";
+        var apiEndPoint = hostname.includes("mivoter.org")
+           ? "https://address.mivoter.org"
+           : "/api/address-suggest";
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
             .then(data => {
                 const suggestions = (data.rows || []).map(r => ({
-                    label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
+                    label: r.num + " " + toTitleCase(r.street) + ", " + toTitleCase(r.name) + `, ${r.zipcode}`,
                     raw: r
                 }));
                 this.renderList(suggestions);
@@ -194,6 +197,12 @@ class AddressSearch extends HTMLElement {
             })
         );
     }
+}
+
+function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function(txt){
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
 }
 
 customElements.define('address-search', AddressSearch);
