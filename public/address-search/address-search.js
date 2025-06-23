@@ -107,6 +107,7 @@ class AddressSearch extends HTMLElement {
 
         this.abortController = new AbortController();
 
+        // Fetch suggestions from the API (change URL as needed)
         fetch(`/api/address-suggest?street=${encodeURIComponent(street)}&num=${num}`, {
             signal: this.abortController.signal
         })
