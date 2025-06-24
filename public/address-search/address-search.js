@@ -116,7 +116,7 @@ class AddressSearch extends HTMLElement {
             .then(res => res.json())
             .then(data => {
                 const suggestions = (data.rows || []).map(r => ({
-                    label: r.num + " " + toTitleCase(r.street) + ", " + toTitleCase(r.name) + `, ${r.zipcode}`,
+                    label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
                     raw: r
                 }));
                 this.renderList(suggestions);
@@ -197,12 +197,6 @@ class AddressSearch extends HTMLElement {
             })
         );
     }
-}
-
-function toTitleCase(str) {
-    return str.replace(/\w\S*/g, function(txt){
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
 }
 
 customElements.define('address-search', AddressSearch);
