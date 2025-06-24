@@ -200,9 +200,12 @@ class AddressSearch extends HTMLElement {
 }
 
 function toTitleCase(str) {
+    return str;
+/*  (already done in DB, but just commenting out this for now, just in case)
     return str.replace(/\w\S*/g, function(txt){
         return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     });
+*/
 }
 
 customElements.define('address-search', AddressSearch);
