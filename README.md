@@ -17,3 +17,14 @@ A simple Node.js application using Express to provide address search functionali
 
 ```bash
 npm install
+
+## Tested on:
+
+- Chrome  (Windows, Linux, iOS-phone)
+- Edge    (Windows)
+- Firefox (Windows, Linux)
+- Safari  (iOS-phone)
+
+## Needs testing on:
+- Chrome  (MacOS)
+- Safari  (MacOS)
