@@ -92,8 +92,7 @@ class AddressSearch extends HTMLElement {
     }
 
     fetchSuggestions(query) {
-        const { street } = this.extractStreetAndNumber(query);
-        const num = 20;
+        const { num, street } = this.extractStreetAndNumber(query);
 
         if (!num || !street) {
             this.clearList();
@@ -106,9 +105,12 @@ class AddressSearch extends HTMLElement {
         }
 
         this.abortController = new AbortController();
-
-        // Fetch suggestions from the API (change URL as needed)
-        fetch(`/api/address-suggest?street=${encodeURIComponent(street)}&num=${num}`, {
+ 
+        var hostname    = window.location.hostname ?? "";
+        var apiEndPoint = hostname.includes("mivoter.org")
+           ? "https://address.mivoter.org"
+           : "/api/address-suggest";
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
