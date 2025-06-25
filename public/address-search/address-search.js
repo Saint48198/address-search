@@ -39,12 +39,12 @@ class AddressSearch extends HTMLElement {
           list-style: none;
           background: white;
           border: 1px solid #ccc;
-          max-height: 200px;
+          /* max-height: 200px;*/
           overflow-y: auto;
           z-index: 1000;
         }
         li {
-          padding: 10px;
+          padding: 0.2em; 10px 0 10px;
           cursor: pointer;
         }
         li.highlight {
@@ -53,7 +53,7 @@ class AddressSearch extends HTMLElement {
       </style>
       <div class="container">
         <div class="input-wrapper">
-            <input type="text" placeholder="Search address..." />
+            <input type="text" style="font-family: 'Roboto';" placeholder="Enter your address..." />
             <button class="action" type="button" title="Clear or custom action">✖</button>
         </div>
         <ul hidden></ul>
@@ -110,7 +110,7 @@ class AddressSearch extends HTMLElement {
         var apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}`, {
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&max=4`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
@@ -119,7 +119,7 @@ class AddressSearch extends HTMLElement {
                     label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
                     raw: r
                 }));
-                this.renderList(suggestions);
+                this.renderList(suggestions, data.errorCode);
             })
             .catch(err => {
                 console.error('API error:', err);
@@ -130,7 +130,7 @@ class AddressSearch extends HTMLElement {
             });
     }
 
-    renderList(suggestions) {
+    renderList(suggestions, errorCode) {
         this.results = suggestions;
         this.list.innerHTML = '';
         this.list.hidden = suggestions.length === 0;
@@ -141,6 +141,13 @@ class AddressSearch extends HTMLElement {
             li.dataset.index = i;
             this.list.appendChild(li);
         });
+
+        if (errorCode == '2') {
+            const li = document.createElement('li');
+            li.innerHTML = '<center><i>(Too many results; keep typing.)</i></center>';
+            li.dataset.index = suggestions.length;
+            this.list.appendChild(li);
+        }
     }
 
     clearList() {
