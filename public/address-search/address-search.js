@@ -12,23 +12,52 @@ class AddressSearch extends HTMLElement {
           width: 100%;
         }
         .input-wrapper {
-          display: flex;
           align-items: center;
           position: relative;
-          gap: 5px;
         }
         input {
-          flex: 1;
           width: 100%;
           box-sizing: border-box;
           padding: 10px 36px 10px 10px;
         }
         button.action {
-          width: 30px;
-          padding: 10px 0;
+          position: absolute;
+          right: 4px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 28px;
+          height: 28px;
+          border: none;
+          border-radius: 50%;
+          background-color: #666;
+          color: white;
+          font-size: 22px;
+          font-family: "Segoe UI", "Roboto", sans-serif;
+          font-weight: 100;
+          line-height: 1;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
           margin: 0;
-          text-align: center;
+          transition: background-color 0.2s ease, transform 0.1s ease;
         }
+        
+        button.action:hover {
+          background-color: #444;
+        }
+        
+        button.action:focus {
+          outline: 2px solid #888;
+          outline-offset: 2px;
+        }
+        
+        button.action:active {
+          background-color: #222;
+          transform: translateY(-50%) scale(0.95);
+        }
+        
         ul {
           position: absolute;
           top: 100%;
@@ -54,7 +83,7 @@ class AddressSearch extends HTMLElement {
       <div class="container">
         <div class="input-wrapper">
             <input type="text" placeholder="Search address..." />
-            <button class="action" type="button" title="Clear or custom action">✖</button>
+            <button class="action" type="button" title="Clear address bar">&times;</button>
         </div>
         <ul hidden></ul>
       </div>
@@ -64,10 +93,18 @@ class AddressSearch extends HTMLElement {
     connectedCallback() {
         this.input = this.shadowRoot.querySelector('input');
         this.list = this.shadowRoot.querySelector('ul');
+        this.actionButton = this.shadowRoot.querySelector('button.action');
 
         this.input.addEventListener('input', this.onInput.bind(this));
         this.input.addEventListener('keydown', this.onKeyDown.bind(this));
         this.list.addEventListener('click', this.onClick.bind(this));
+
+        // button for clearing input
+        this.actionButton.addEventListener('click', () => {
+            this.input.value = '';
+            this.clearList();
+            this.input.focus();
+        });
     }
 
     onInput(e) {
@@ -90,6 +127,7 @@ class AddressSearch extends HTMLElement {
         // Call fetch after debounce
         clearTimeout(this.debounceTimeout);
         this.debounceTimeout = setTimeout(() => {
+            console.log('Fetching suggestions for:', value);
             this.fetchSuggestions(value);
         }, 300);
     }
