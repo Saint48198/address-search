@@ -111,15 +111,7 @@ class AddressSearch extends HTMLElement {
         const value = this.input.value.trim();
         this.selectedIndex = -1;
 
-        if (!value.length) {
-            this.clearList();
-            return;
-        }
-
-        const startsWithNumber = /^\d/.test(value);
-
-        // If it starts with a number and has fewer than 3 characters, block
-        if (startsWithNumber && value.length < 3) {
+        if (value.length < 3) {
             this.clearList();
             return;
         }
@@ -127,7 +119,6 @@ class AddressSearch extends HTMLElement {
         // Call fetch after debounce
         clearTimeout(this.debounceTimeout);
         this.debounceTimeout = setTimeout(() => {
-            console.log('Fetching suggestions for:', value);
             this.fetchSuggestions(value);
         }, 300);
     }
