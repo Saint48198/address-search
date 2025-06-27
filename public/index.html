@@ -16,6 +16,7 @@
         body, td, input, div, ul, address-search {
            font-family: 'Roboto';
         }
+        li { margin-top: .4em; }
     </style>
 </head>
 <body>
@@ -32,5 +33,27 @@
         console.log('Selected address:', e.detail);
     });
 </script>
+
+<p/>
+<b>Outstanding to-do's:</b>
+<ol>
+<li>Why shadow DOM?  Learn.  Concerned about fitting in to larger UI HTML/CSS.
+<li>Set max # of results someplace obvious, not magic number.
+<li>Should "too many" warning be at the top or bottom of the list?  
+     (Hard to see at bottom on small phones.)
+<li>Experiment replacing extractHouseStreetCity() code with regex?
+<li>Think about font-sizes, how results are displayed (wrap/indent if too long).
+<li>Some kind of warning/suggestion for zero results, when user has typed "enough" characters.
+<li>House # range display (if user does not type house #) is wide.&nbsp;  Do we care?&nbsp;
+    How about "2100+ StreetName" instead of [2100-2200] StreetName" ?
+<li>Thinking of replacing X button with an image; what issues do I need to worry about?
+<li>2100 Hammond Place Center, Traverse city.  Shows as Garfield Township.  Do we care?
+    Should we show both jurisdiction <b>and</b> postal-address city name?  Is that too long?
+<li>Rd vs Road, etc.  Don't usually need it if user enters house #.  But potentially confusing.
+</ol>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
 </body>
 </html>
