@@ -82,7 +82,7 @@ class AddressSearch extends HTMLElement {
       </style>
       <div class="container">
         <div class="input-wrapper">
-            <input type="text" placeholder="Search address..." />
+            <input type="text" placeholder="Enter address like: 123 Main, MyCity" />
             <button class="action" type="button" title="Clear address bar">&times;</button>
         </div>
         <ul hidden></ul>
