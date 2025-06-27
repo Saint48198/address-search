@@ -129,10 +129,41 @@ class AddressSearch extends HTMLElement {
         return { num: match[1], street: match[2] };
     }
 
-    fetchSuggestions(query) {
-        const { num, street } = this.extractStreetAndNumber(query);
+    extractHouseStreetCityFrom (text) {
+       var pos = this.scanWhile(text,  0,   this.isSpace);
+       pos     = this.scanWhile(text,  pos, this.isDigit);
+       var house = text.substr(0, pos).trim();
 
-        if (!num || !street) {
+       var streetStart = pos;
+       pos = this.scanWhile(text, streetStart, this.notComma);
+       var street = text.substr(streetStart, pos-streetStart).trim();
+ 
+       var city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
+
+       return { num: house, street: street, city: city};
+    }
+
+    scanWhile(text, pos, callback) {
+       while (true) {
+          if (pos >= text.length)     return text.length;
+          if (! callback(text, pos))  return pos;
+          ++pos;
+       }
+    }
+
+    isDigit(text, pos) {
+       const code = text.charCodeAt(pos);
+       return (code >= 48  &&  code <= 57);
+    }
+
+    isSpace(text, pos)  { return text.charAt(pos) == ' '; }
+
+    notComma(text, pos) { return text.charAt(pos) != ','; }
+
+    fetchSuggestions(query) {
+        const {num, street, city} = this.extractHouseStreetCityFrom(query);
+
+        if (!street  ||  street.length < 3) {
             this.clearList();
             return;
         }
@@ -148,7 +179,7 @@ class AddressSearch extends HTMLElement {
         var apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&max=4`, {
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&city=${city}&max=4`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
@@ -174,18 +205,18 @@ class AddressSearch extends HTMLElement {
         this.list.hidden = suggestions.length === 0;
 
         suggestions.forEach((s, i) => {
-            const li = document.createElement('li');
-            li.textContent = s.label || s.address || s;
-            li.dataset.index = i;
-            this.list.appendChild(li);
+            this.addToResultsList(s.label || s.address || s, i);
         });
 
-        if (errorCode == '2') {
-            const li = document.createElement('li');
-            li.innerHTML = '<center><i>(Too many results; keep typing.)</i></center>';
-            li.dataset.index = suggestions.length;
-            this.list.appendChild(li);
-        }
+        if (errorCode == '2')
+           this.addToResultsList('<center><i>(Too many results; keep typing.)</i></center>', suggestions.length);
+    }
+
+    addToResultsList (text, rowNumber) {
+       const li = document.createElement('li');
+       li.innerHTML = text;
+       li.dataset.index = rowNumber;
+       this.list.appendChild(li);
     }
 
     clearList() {
