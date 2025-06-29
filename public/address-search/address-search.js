@@ -208,7 +208,7 @@ class AddressSearch extends HTMLElement {
             this.addToResultsList(s.label || s.address || s, i);
         });
 
-        if (errorCode == '2')
+        if (errorCode === '2')
            this.addToResultsList('<center><i>(Too many results; keep typing.)</i></center>', suggestions.length);
     }
 
