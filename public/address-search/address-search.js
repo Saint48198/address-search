@@ -68,12 +68,12 @@ class AddressSearch extends HTMLElement {
           list-style: none;
           background: white;
           border: 1px solid #ccc;
-          max-height: 200px;
+          /* max-height: 200px;*/
           overflow-y: auto;
           z-index: 1000;
         }
         li {
-          padding: 10px;
+          padding: 0.2em; 10px 0 10px;
           cursor: pointer;
         }
         li.highlight {
@@ -82,7 +82,7 @@ class AddressSearch extends HTMLElement {
       </style>
       <div class="container">
         <div class="input-wrapper">
-            <input type="text" placeholder="Search address..." />
+            <input type="text" placeholder="Enter address like: 123 Main, MyCity" />
             <button class="action" type="button" title="Clear address bar">&times;</button>
         </div>
         <ul hidden></ul>
@@ -129,10 +129,41 @@ class AddressSearch extends HTMLElement {
         return { num: match[1], street: match[2] };
     }
 
-    fetchSuggestions(query) {
-        const { num, street } = this.extractStreetAndNumber(query);
+    extractHouseStreetCityFrom (text) {
+       let pos = this.scanWhile(text,  0,   this.isSpace);
+       pos     = this.scanWhile(text,  pos, this.isDigit);
+       let house = text.substr(0, pos).trim();
 
-        if (!num || !street) {
+       let streetStart = pos;
+       pos = this.scanWhile(text, streetStart, this.notComma);
+       let street = text.substr(streetStart, pos-streetStart).trim();
+ 
+       let city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
+
+       return { num: house, street: street, city: city};
+    }
+
+    scanWhile(text, pos, callback) {
+       while (true) {
+          if (pos >= text.length)     return text.length;
+          if (! callback(text, pos))  return pos;
+          ++pos;
+       }
+    }
+
+    isDigit(text, pos) {
+       const code = text.charCodeAt(pos);
+       return (code >= 48  &&  code <= 57);
+    }
+
+    isSpace(text, pos)  { return text.charAt(pos) == ' '; }
+
+    notComma(text, pos) { return text.charAt(pos) != ','; }
+
+    fetchSuggestions(query) {
+        const {num, street, city} = this.extractHouseStreetCityFrom(query);
+
+        if (!street  ||  street.length < 3) {
             this.clearList();
             return;
         }
@@ -148,7 +179,7 @@ class AddressSearch extends HTMLElement {
         var apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}`, {
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&city=${city}&max=4`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
@@ -157,7 +188,7 @@ class AddressSearch extends HTMLElement {
                     label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
                     raw: r
                 }));
-                this.renderList(suggestions);
+                this.renderList(suggestions, data.errorCode);
             })
             .catch(err => {
                 console.error('API error:', err);
@@ -168,17 +199,24 @@ class AddressSearch extends HTMLElement {
             });
     }
 
-    renderList(suggestions) {
+    renderList(suggestions, errorCode) {
         this.results = suggestions;
         this.list.innerHTML = '';
         this.list.hidden = suggestions.length === 0;
 
         suggestions.forEach((s, i) => {
-            const li = document.createElement('li');
-            li.textContent = s.label || s.address || s;
-            li.dataset.index = i;
-            this.list.appendChild(li);
+            this.addToResultsList(s.label || s.address || s, i);
         });
+
+        if (errorCode === '2')
+           this.addToResultsList('<div class="centered-text"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
+    }
+
+    addToResultsList (text, rowNumber) {
+       const li = document.createElement('li');
+       li.textContent = text;
+       li.dataset.index = rowNumber;
+       this.list.appendChild(li);
     }
 
     clearList() {
