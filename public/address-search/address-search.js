@@ -209,7 +209,7 @@ class AddressSearch extends HTMLElement {
         });
 
         if (errorCode === '2')
-           this.addToResultsList('<center><i>(Too many results; keep typing.)</i></center>', suggestions.length);
+           this.addToResultsList('<div class="centered-text"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
     }
 
     addToResultsList (text, rowNumber) {
