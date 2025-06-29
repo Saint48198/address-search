@@ -214,7 +214,7 @@ class AddressSearch extends HTMLElement {
 
     addToResultsList (text, rowNumber) {
        const li = document.createElement('li');
-       li.innerHTML = text;
+       li.textContent = text;
        li.dataset.index = rowNumber;
        this.list.appendChild(li);
     }
