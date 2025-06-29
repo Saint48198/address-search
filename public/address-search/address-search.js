@@ -79,6 +79,9 @@ class AddressSearch extends HTMLElement {
         li.highlight {
           background-color: #f0f0f0;
         }
+        .centered-text {
+          text-align: center;
+        }
       </style>
       <div class="container">
         <div class="input-wrapper">
@@ -123,42 +126,59 @@ class AddressSearch extends HTMLElement {
         }, 300);
     }
 
-    extractStreetAndNumber(input) {
-        const match = input.match(/^(\d+)\s+(.+)$/);
-        if (!match) return { num: '', street: input };
-        return { num: match[1], street: match[2] };
-    }
-
     extractHouseStreetCityFrom (text) {
-       let pos = this.scanWhile(text,  0,   this.isSpace);
-       pos     = this.scanWhile(text,  pos, this.isDigit);
-       let house = text.substr(0, pos).trim();
+        text = text.trim();
+        let num = "";
+        let street = "";
+        let city = "";
 
-       let streetStart = pos;
-       pos = this.scanWhile(text, streetStart, this.notComma);
-       let street = text.substr(streetStart, pos-streetStart).trim();
- 
-       let city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
+        const streetSuffixes = new Set([
+            "st", "street", "ave", "avenue", "blvd", "road", "rd",
+            "lane", "ln", "drive", "dr", "court", "ct", "circle", "cir",
+            "highway", "hwy", "parkway", "pkwy"
+        ]);
 
-       return { num: house, street: street, city: city};
+        const match = text.match(/^(\d+)\s+(.*)$/);
+        if (match) {
+            num = match[1];
+            text = match[2];
+        }
+
+        // If there's a comma, split into street and city parts
+        if (text.includes(',')) {
+            let [streetPart, cityPart] = text.split(',');
+            street = streetPart.trim();
+            city = cityPart.trim();
+        } else {
+            // No comma: try to infer city from the last words if possible
+            const parts = text.split(/\s+/);
+            if (parts.length > 2) {
+                // Check if last or second last words are likely a city (not a street suffix)
+                const last = parts[parts.length - 1].toLowerCase();
+                const secondLast = parts[parts.length - 2].toLowerCase();
+
+                if (this.isLikelyCity(last, streetSuffixes)) {
+                    city = this.isLikelyCity(secondLast, streetSuffixes)
+                        ? parts.splice(-2).join(' ') // Two-word city at the end
+                        : parts.pop(); // Single-word city at the end
+                }
+            } else if (parts.length === 2) {
+                // If only two words, check if the last is a city
+                const last = parts[1].toLowerCase();
+                if (this.isLikelyCity(last, streetSuffixes)) {
+                    city = parts.pop();
+                }
+            }
+            // The rest is the street part
+            street = parts.join(' ');
+        }
+
+        return { num, street, city };
     }
 
-    scanWhile(text, pos, callback) {
-       while (true) {
-          if (pos >= text.length)     return text.length;
-          if (! callback(text, pos))  return pos;
-          ++pos;
-       }
+    isLikelyCity(word, streetSuffixes) {
+        return /^[a-zA-Z]+$/.test(word) && !streetSuffixes.has(word.toLowerCase());
     }
-
-    isDigit(text, pos) {
-       const code = text.charCodeAt(pos);
-       return (code >= 48  &&  code <= 57);
-    }
-
-    isSpace(text, pos)  { return text.charAt(pos) == ' '; }
-
-    notComma(text, pos) { return text.charAt(pos) != ','; }
 
     fetchSuggestions(query) {
         const {num, street, city} = this.extractHouseStreetCityFrom(query);
@@ -175,8 +195,8 @@ class AddressSearch extends HTMLElement {
 
         this.abortController = new AbortController();
  
-        var hostname    = window.location.hostname ?? "";
-        var apiEndPoint = hostname.includes("mivoter.org")
+        let hostname    = window.location.hostname ?? "";
+        const apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
         fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&city=${city}&max=4`, {
@@ -203,12 +223,12 @@ class AddressSearch extends HTMLElement {
         this.results = suggestions;
         this.list.innerHTML = '';
         this.list.hidden = suggestions.length === 0;
-
+        console.log(typeof errorCode);
         suggestions.forEach((s, i) => {
             this.addToResultsList(s.label || s.address || s, i);
         });
 
-        if (errorCode === '2')
+        if (errorCode === 2)
            this.addToResultsList('<div class="centered-text"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
     }
 
