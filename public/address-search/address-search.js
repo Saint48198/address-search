@@ -130,15 +130,15 @@ class AddressSearch extends HTMLElement {
     }
 
     extractHouseStreetCityFrom (text) {
-       var pos = this.scanWhile(text,  0,   this.isSpace);
+       let pos = this.scanWhile(text,  0,   this.isSpace);
        pos     = this.scanWhile(text,  pos, this.isDigit);
-       var house = text.substr(0, pos).trim();
+       let house = text.substr(0, pos).trim();
 
-       var streetStart = pos;
+       let streetStart = pos;
        pos = this.scanWhile(text, streetStart, this.notComma);
-       var street = text.substr(streetStart, pos-streetStart).trim();
+       let street = text.substr(streetStart, pos-streetStart).trim();
  
-       var city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
+       let city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
 
        return { num: house, street: street, city: city};
     }
