@@ -43,21 +43,21 @@ class AddressSearch extends HTMLElement {
           margin: 0;
           transition: background-color 0.2s ease, transform 0.1s ease;
         }
-        
+  
         button.action:hover {
           background-color: #444;
         }
-        
+  
         button.action:focus {
           outline: 2px solid #888;
           outline-offset: 2px;
         }
-        
+  
         button.action:active {
           background-color: #222;
           transform: translateY(-50%) scale(0.95);
         }
-        
+  
         ul {
           position: absolute;
           top: 100%;
@@ -71,6 +71,9 @@ class AddressSearch extends HTMLElement {
           /* max-height: 200px;*/
           overflow-y: auto;
           z-index: 1000;
+        }
+        .center {
+           text-align: center;
         }
         li {
           padding: 0.2em; 10px 0 10px;
@@ -139,7 +142,6 @@ class AddressSearch extends HTMLElement {
        let street = text.substr(streetStart, pos-streetStart).trim();
  
        let city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
-
        return { num: house, street: street, city: city};
     }
 
@@ -208,13 +210,14 @@ class AddressSearch extends HTMLElement {
             this.addToResultsList(s.label || s.address || s, i);
         });
 
-        if (errorCode === '2')
-           this.addToResultsList('<div class="centered-text"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
+        if (errorCode == '2') {
+           this.addToResultsList('<div class="center"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
+        }
     }
 
     addToResultsList (text, rowNumber) {
        const li = document.createElement('li');
-       li.textContent = text;
+       li.innerHTML = text;
        li.dataset.index = rowNumber;
        this.list.appendChild(li);
     }
