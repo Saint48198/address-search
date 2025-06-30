@@ -40,19 +40,20 @@
 <li>User has typed enough to reduce list to <b>one</b> address.&nbsp;
    Pressing enter should act like clicking on that address.&nbsp;
    (Otherwise ignored.)
-<li>Why shadow DOM?  Learn.  Concerned about fitting in to larger UI HTML/CSS.
 <li>Set max # of results someplace obvious, not magic number.
 <li>Should "too many" warning be at the top or bottom of the list?  
      (Hard to see at bottom on small phones.)
-<li>Experiment replacing extractHouseStreetCity() code with regex?
 <li>Think about font-sizes, how results are displayed (wrap/indent if too long).
 <li>Some kind of warning/suggestion for zero results, when user has typed "enough" characters.
 <li>House # range display (if user does not type house #) is wide.&nbsp;  Do we care?&nbsp;
     How about "2100+ StreetName" instead of [2100-2200] StreetName" ?
 <li>Thinking of replacing X button with an image; what issues do I need to worry about?
-<li>2100 Hammond Place Center, Traverse city.  Shows as Garfield Township.  Do we care?
-    Should we show both jurisdiction <b>and</b> postal-address city name?  Is that too long?
-<li>Rd vs Road, etc.  Don't usually need it if user enters house #.  But potentially confusing.
+<li>Thinking about having the back-end scan the <b>entire</b> string after the house #,
+    and parsing it there.&nbsp;
+    In particular, if there is no comma and no results, looking for places to split
+    out the city name from the street name.
+<li><b>Must</b> be able to parse whatever selected result is placed in the input box --
+    in case user tries to then edit it further.
 </ol>
 
 <p>&nbsp;</p>
