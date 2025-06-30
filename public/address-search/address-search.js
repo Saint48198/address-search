@@ -185,7 +185,7 @@ class AddressSearch extends HTMLElement {
             .then(res => res.json())
             .then(data => {
                 const suggestions = (data.rows || []).map(r => ({
-                    label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
+                    label: `${r.num} ${r.street}, ${r.cityname || r.name}, ${r.zipcode}`,
                     raw: r
                 }));
                 this.renderList(suggestions, data.errorCode);
