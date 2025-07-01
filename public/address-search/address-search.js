@@ -232,7 +232,10 @@ class AddressSearch extends HTMLElement {
         const selected = this.results[index];
         if (!selected) return;
 
-        const value = selected.label || selected.address || selected;
+        let value = selected.label || selected.address || selected;
+        if (value.search(/[0-9]+-[0-9]+/) == 0) {
+           value = value.replace(/-[0-9]+/, "");
+        }
         this.input.value = value;
         this.clearList();
 
