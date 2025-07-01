@@ -46,16 +46,19 @@
      (Hard to see at bottom on small phones.)
 <li>Think about font-sizes, how results are displayed (wrap/indent if too long).
 <li>Some kind of warning/suggestion for zero results, when user has typed "enough" characters.
-<li>House # range display (if user does not type house #) is wide.&nbsp;  Do we care?&nbsp;
-    How about "2100+ StreetName" instead of [2100-2200] StreetName" ?
 <li>Thinking of replacing X button with an image; what issues do I need to worry about?
 <li>Thinking about having the back-end scan the <b>entire</b> string after the house #,
     and parsing it there.&nbsp;
     In particular, if there is no comma and no results, looking for places to split
     out the city name from the street name.
-<li><b>Must</b> be able to parse whatever selected result is placed in the input box --
-    in case user tries to then edit it further.
 </ol>
+
+<p/>
+See <a href="https://address.mivoter.org/UI/testparsing.html"
+    >address.mivoter.org/UI/testparsing.html</a> 
+for quasi unit-tests for new house/street parsing code.
+
+
 
 <p>&nbsp;</p>
 <p>&nbsp;</p>
