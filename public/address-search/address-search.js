@@ -129,7 +129,6 @@ class AddressSearch extends HTMLElement {
         }, 300);
     }
 
-
     fetchSuggestions(query) {
         const {house, street} = parseHouseStreetFrom(query);
 
