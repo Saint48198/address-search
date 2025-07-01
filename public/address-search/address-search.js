@@ -131,7 +131,7 @@ class AddressSearch extends HTMLElement {
 
 
     fetchSuggestions(query) {
-        const {num, street} = parseHouseStreetFrom(query);
+        const {house, street} = parseHouseStreetFrom(query);
 
         if (!street  ||  street.length < 3) {
             this.clearList();
@@ -149,7 +149,7 @@ class AddressSearch extends HTMLElement {
         const apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&max=5`, {
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())

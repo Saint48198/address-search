@@ -36,6 +36,7 @@ function parseHouseStreetFrom (input) {
    if (pos4 >  pos3+1)           return noHouseNumber(text);  // rule (f)
 
    let lastChar = text.charAt(pos4);
+   /* console.log(`Returning: [${pos1},${pos2}] => ${text.substring(pos1, pos2)}`); */
    if (lastChar==' '  ||  lastChar=='') return { house: text.substring(pos1, pos2), street: text.substring(pos4+1) };
    return noHouseNumber(text);
 }
