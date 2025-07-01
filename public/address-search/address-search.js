@@ -82,6 +82,9 @@ class AddressSearch extends HTMLElement {
         li.highlight {
           background-color: #f0f0f0;
         }
+        .centered-text {
+          text-align: center;
+        }
       </style>
       <div class="container">
         <div class="input-wrapper">
@@ -126,44 +129,9 @@ class AddressSearch extends HTMLElement {
         }, 300);
     }
 
-    extractStreetAndNumber(input) {
-        const match = input.match(/^(\d+)\s+(.+)$/);
-        if (!match) return { num: '', street: input };
-        return { num: match[1], street: match[2] };
-    }
-
-    extractHouseStreetCityFrom (text) {
-       let pos = this.scanWhile(text,  0,   this.isSpace);
-       pos     = this.scanWhile(text,  pos, this.isDigit);
-       let house = text.substr(0, pos).trim();
-
-       let streetStart = pos;
-       pos = this.scanWhile(text, streetStart, this.notComma);
-       let street = text.substr(streetStart, pos-streetStart).trim();
- 
-       let city = (pos < text.length-1 ? text.substr(pos+1) : "").trim();
-       return { num: house, street: street, city: city};
-    }
-
-    scanWhile(text, pos, callback) {
-       while (true) {
-          if (pos >= text.length)     return text.length;
-          if (! callback(text, pos))  return pos;
-          ++pos;
-       }
-    }
-
-    isDigit(text, pos) {
-       const code = text.charCodeAt(pos);
-       return (code >= 48  &&  code <= 57);
-    }
-
-    isSpace(text, pos)  { return text.charAt(pos) == ' '; }
-
-    notComma(text, pos) { return text.charAt(pos) != ','; }
 
     fetchSuggestions(query) {
-        const {num, street, city} = this.extractHouseStreetCityFrom(query);
+        const {num, street} = parseHouseStreetFrom(query);
 
         if (!street  ||  street.length < 3) {
             this.clearList();
@@ -177,11 +145,11 @@ class AddressSearch extends HTMLElement {
 
         this.abortController = new AbortController();
  
-        var hostname    = window.location.hostname ?? "";
-        var apiEndPoint = hostname.includes("mivoter.org")
+        let hostname    = window.location.hostname ?? "";
+        const apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&city=${city}&max=4`, {
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&max=5`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
@@ -205,7 +173,7 @@ class AddressSearch extends HTMLElement {
         this.results = suggestions;
         this.list.innerHTML = '';
         this.list.hidden = suggestions.length === 0;
-
+        console.log(typeof errorCode);
         suggestions.forEach((s, i) => {
             this.addToResultsList(s.label || s.address || s, i);
         });
