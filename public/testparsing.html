@@ -1,0 +1,31 @@
+<html>
+<head>
+    <script               src="./address-search/parseHouseStreet.js"></script>
+</head>
+
+<body>
+<script>
+   assertMatch("1",   "",     "1");
+   assertMatch("123", "",     "123");
+   assertMatch("123", "main", "123 main");
+   assertMatch("123", "main", "N123 main");
+   assertMatch("123", "main", "123S main");
+   assertMatch("123", "main", "123- main");
+   assertMatch("123", "main", "123-B main");
+   assertMatch("123", "",     "123-B");
+
+   assertMatch("",    "NB123 main", "NB123 main");
+   assertMatch("",    "main",       "main");
+   assertMatch("",    "B- main",    "B- main");
+   assertMatch("",    "0.65 LN",    "0.65 LN");
+</script>
+
+Dumb (but effective) unit-tests for the parseHouseStreetFrom() function.
+
+<p/>
+(See the linked parseHouseStreet.js.)
+
+<p/>
+If no alerts appear, then all tests passed.
+</body>
+</html>

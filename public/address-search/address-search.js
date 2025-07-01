@@ -43,21 +43,21 @@ class AddressSearch extends HTMLElement {
           margin: 0;
           transition: background-color 0.2s ease, transform 0.1s ease;
         }
-        
+  
         button.action:hover {
           background-color: #444;
         }
-        
+  
         button.action:focus {
           outline: 2px solid #888;
           outline-offset: 2px;
         }
-        
+  
         button.action:active {
           background-color: #222;
           transform: translateY(-50%) scale(0.95);
         }
-        
+  
         ul {
           position: absolute;
           top: 100%;
@@ -71,6 +71,9 @@ class AddressSearch extends HTMLElement {
           /* max-height: 200px;*/
           overflow-y: auto;
           z-index: 1000;
+        }
+        .center {
+           text-align: center;
         }
         li {
           padding: 0.2em; 10px 0 10px;
@@ -126,62 +129,8 @@ class AddressSearch extends HTMLElement {
         }, 300);
     }
 
-    extractHouseStreetCityFrom (text) {
-        text = text.trim();
-        let num = "";
-        let street = "";
-        let city = "";
-
-        const streetSuffixes = new Set([
-            "st", "street", "ave", "avenue", "blvd", "road", "rd",
-            "lane", "ln", "drive", "dr", "court", "ct", "circle", "cir",
-            "highway", "hwy", "parkway", "pkwy"
-        ]);
-
-        const match = text.match(/^(\d+)\s+(.*)$/);
-        if (match) {
-            num = match[1];
-            text = match[2];
-        }
-
-        // If there's a comma, split into street and city parts
-        if (text.includes(',')) {
-            let [streetPart, cityPart] = text.split(',');
-            street = streetPart.trim();
-            city = cityPart.trim();
-        } else {
-            // No comma: try to infer city from the last words if possible
-            const parts = text.split(/\s+/);
-            if (parts.length > 2) {
-                // Check if last or second last words are likely a city (not a street suffix)
-                const last = parts[parts.length - 1].toLowerCase();
-                const secondLast = parts[parts.length - 2].toLowerCase();
-
-                if (this.isLikelyCity(last, streetSuffixes)) {
-                    city = this.isLikelyCity(secondLast, streetSuffixes)
-                        ? parts.splice(-2).join(' ') // Two-word city at the end
-                        : parts.pop(); // Single-word city at the end
-                }
-            } else if (parts.length === 2) {
-                // If only two words, check if the last is a city
-                const last = parts[1].toLowerCase();
-                if (this.isLikelyCity(last, streetSuffixes)) {
-                    city = parts.pop();
-                }
-            }
-            // The rest is the street part
-            street = parts.join(' ');
-        }
-
-        return { num, street, city };
-    }
-
-    isLikelyCity(word, streetSuffixes) {
-        return /^[a-zA-Z]+$/.test(word) && !streetSuffixes.has(word.toLowerCase());
-    }
-
     fetchSuggestions(query) {
-        const {num, street, city} = this.extractHouseStreetCityFrom(query);
+        const {house, street} = parseHouseStreetFrom(query);
 
         if (!street  ||  street.length < 3) {
             this.clearList();
@@ -199,13 +148,13 @@ class AddressSearch extends HTMLElement {
         const apiEndPoint = hostname.includes("mivoter.org")
            ? "https://address.mivoter.org"
            : "/api/address-suggest";
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${num}&city=${city}&max=4`, {
+        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`, {
             signal: this.abortController.signal
         })
             .then(res => res.json())
             .then(data => {
                 const suggestions = (data.rows || []).map(r => ({
-                    label: `${r.num} ${r.street}, ${r.name}, ${r.zipcode}`,
+                    label: `${r.num} ${r.street}, ${r.cityname || r.name}, ${r.zipcode}`,
                     raw: r
                 }));
                 this.renderList(suggestions, data.errorCode);
@@ -228,13 +177,14 @@ class AddressSearch extends HTMLElement {
             this.addToResultsList(s.label || s.address || s, i);
         });
 
-        if (errorCode === 2)
-           this.addToResultsList('<div class="centered-text"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
+        if (errorCode == '2') {
+           this.addToResultsList('<div class="center"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
+        }
     }
 
     addToResultsList (text, rowNumber) {
        const li = document.createElement('li');
-       li.textContent = text;
+       li.innerHTML = text;
        li.dataset.index = rowNumber;
        this.list.appendChild(li);
     }
@@ -281,7 +231,10 @@ class AddressSearch extends HTMLElement {
         const selected = this.results[index];
         if (!selected) return;
 
-        const value = selected.label || selected.address || selected;
+        let value = selected.label || selected.address || selected;
+        if (value.search(/[0-9]+-[0-9]+/) == 0) {
+           value = value.replace(/-[0-9]+/, "");
+        }
         this.input.value = value;
         this.clearList();
 
