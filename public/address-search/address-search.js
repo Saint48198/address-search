@@ -75,8 +75,9 @@ class AddressSearch extends HTMLElement {
         .center {
            text-align: center;
         }
-        li {
-          padding: 0.2em; 10px 0 10px;
+        li { /* top right bottom left */
+          padding: 0.15em 10px 0 1.7em;
+          text-indent: -1.5em;
           cursor: pointer;
         }
         li.highlight {
