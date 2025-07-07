@@ -213,9 +213,13 @@ class AddressSearch extends HTMLElement {
             e.preventDefault();
             this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
             this.highlightItem();
-        } else if (e.key === 'Enter' && this.selectedIndex >= 0) {
+        } else if (e.key === 'Enter') {
             e.preventDefault();
-            this.selectSuggestion(this.selectedIndex);
+            if (this.selectedIndex >= 0) {
+                this.selectSuggestion(this.selectedIndex);
+            } else if (this.results.length === 1) {
+                this.selectSuggestion(0);
+            }
         }
     }
 
