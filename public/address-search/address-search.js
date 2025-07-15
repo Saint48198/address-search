@@ -1,9 +1,18 @@
 class AddressSearch extends HTMLElement {
+    static DEFAULT_DEBOUNCE_MS = 300;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
         this.selectedIndex = -1;
         this.results = [];
+        this.debounceTimeout = null;
+        this.abortController = null;
+
+        // pre-bind handlers
+        this.onInput = this.onInput.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onClick = this.onClick.bind(this);
 
         this.shadowRoot.innerHTML = `
       <style>
@@ -102,11 +111,9 @@ class AddressSearch extends HTMLElement {
         this.list = this.shadowRoot.querySelector('ul');
         this.actionButton = this.shadowRoot.querySelector('button.action');
 
-        this.input.addEventListener('input', this.onInput.bind(this));
-        this.input.addEventListener('keydown', this.onKeyDown.bind(this));
-        this.list.addEventListener('click', this.onClick.bind(this));
-
-        // button for clearing input
+        this.input.addEventListener('input', this.onInput);
+        this.input.addEventListener('keydown', this.onKeyDown);
+        this.list.addEventListener('click', this.onClick);
         this.actionButton.addEventListener('click', () => {
             this.input.value = '';
             this.clearList();
@@ -114,7 +121,7 @@ class AddressSearch extends HTMLElement {
         });
     }
 
-    onInput(e) {
+    onInput() {
         const value = this.input.value.trim();
         this.selectedIndex = -1;
 
@@ -123,32 +130,28 @@ class AddressSearch extends HTMLElement {
             return;
         }
 
-        // Call fetch after debounce
         clearTimeout(this.debounceTimeout);
         this.debounceTimeout = setTimeout(() => {
             this.fetchSuggestions(value);
-        }, 300);
+        }, this.constructor.DEFAULT_DEBOUNCE_MS);
     }
 
     fetchSuggestions(query) {
-        const {house, street} = parseHouseStreetFrom(query);
+        const { house, street } = parseHouseStreetFrom(query);
 
-        if (!street  ||  street.length < 3) {
+        if (!street || street.length < 3) {
             this.clearList();
             return;
         }
 
-        // Cancel previous request
-        if (this.abortController) {
-            this.abortController.abort();
-        }
-
+        if (this.abortController) this.abortController.abort();
         this.abortController = new AbortController();
- 
-        let hostname    = window.location.hostname ?? "";
+
+        const hostname = window.location.hostname || "";
         const apiEndPoint = hostname.includes("mivoter.org")
-           ? "https://address.mivoter.org"
-           : "/api/address-suggest";
+            ? "https://address.mivoter.org"
+            : "/api/address-suggest";
+
         fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`, {
             signal: this.abortController.signal
         })
@@ -161,7 +164,6 @@ class AddressSearch extends HTMLElement {
                 this.renderList(suggestions, data.errorCode);
             })
             .catch(err => {
-                console.error('API error:', err);
                 if (err.name !== 'AbortError') {
                     console.error('API error:', err);
                     this.clearList();
@@ -173,21 +175,22 @@ class AddressSearch extends HTMLElement {
         this.results = suggestions;
         this.list.innerHTML = '';
         this.list.hidden = suggestions.length === 0;
-        console.log(typeof errorCode);
+
         suggestions.forEach((s, i) => {
-            this.addToResultsList(s.label || s.address || s, i);
+            const li = document.createElement('li');
+            li.innerHTML = s.label || s.address || s;
+            li.dataset.index = i;
+            this.list.appendChild(li);
         });
 
-        if (errorCode == '2') {
-           this.addToResultsList('<div class="center"><i>(Too many results; keep typing.)</i></div>', suggestions.length);
+        if (errorCode === '2') {
+            const li = document.createElement('li');
+            li.innerHTML = '<div class="center"><i>(Too many results; keep typing.)</i></div>';
+            li.dataset.index = suggestions.length;
+            this.list.appendChild(li);
         }
-    }
 
-    addToResultsList (text, rowNumber) {
-       const li = document.createElement('li');
-       li.innerHTML = text;
-       li.dataset.index = rowNumber;
-       this.list.appendChild(li);
+        this.items = this.shadowRoot.querySelectorAll('li');
     }
 
     clearList() {
@@ -224,11 +227,12 @@ class AddressSearch extends HTMLElement {
     }
 
     highlightItem() {
-        const items = this.shadowRoot.querySelectorAll('li');
-        items.forEach((li) => li.classList.remove('highlight'));
-        if (items[this.selectedIndex]) {
-            items[this.selectedIndex].classList.add('highlight');
-            items[this.selectedIndex].scrollIntoView({ block: 'nearest' });
+        if (!this.items) return;
+        this.items.forEach(li => li.classList.remove('highlight'));
+        const item = this.items[this.selectedIndex];
+        if (item) {
+            item.classList.add('highlight');
+            requestAnimationFrame(() => item.scrollIntoView({ block: 'nearest' }));
         }
     }
 
@@ -237,19 +241,17 @@ class AddressSearch extends HTMLElement {
         if (!selected) return;
 
         let value = selected.label || selected.address || selected;
-        if (value.search(/[0-9]+-[0-9]+/) == 0) {
-           value = value.replace(/-[0-9]+/, "");
+        if (/^[0-9]+-[0-9]+/.test(value)) {
+            value = value.replace(/-[0-9]+/, "");
         }
         this.input.value = value;
         this.clearList();
 
-        this.dispatchEvent(
-            new CustomEvent('address-selected', {
-                detail: selected,
-                bubbles: true,
-                composed: true,
-            })
-        );
+        this.dispatchEvent(new CustomEvent('address-selected', {
+            detail: selected,
+            bubbles: true,
+            composed: true
+        }));
     }
 }
 
