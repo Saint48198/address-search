@@ -1,5 +1,7 @@
 class AddressSearch extends HTMLElement {
     static DEFAULT_DEBOUNCE_MS = 300;
+    static WAIT_FOR_FETCH = false;
+    static FETCH_TIMEOUT_MS = 2000;
 
     constructor() {
         super();
@@ -111,7 +113,14 @@ class AddressSearch extends HTMLElement {
         this.list = this.shadowRoot.querySelector('ul');
         this.actionButton = this.shadowRoot.querySelector('button.action');
 
-        this.input.addEventListener('input', this.onInput);
+        this.input.addEventListener('input', e => {
+            console.log('Input event triggered', this.constructor.WAIT_FOR_FETCH && this.input.disabled);
+            if (this.constructor.WAIT_FOR_FETCH && this.input.disabled) {
+                e.preventDefault();
+                return;
+            }
+            this.onInput();
+        });
         this.input.addEventListener('keydown', this.onKeyDown);
         this.list.addEventListener('click', this.onClick);
         this.actionButton.addEventListener('click', () => {
@@ -152,11 +161,21 @@ class AddressSearch extends HTMLElement {
             ? "https://address.mivoter.org"
             : "/api/address-suggest";
 
-        fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`, {
+        const fetchPromise = fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`, {
             signal: this.abortController.signal
-        })
-            .then(res => res.json())
+        }).then(res => res.json());
+
+        if (this.constructor.WAIT_FOR_FETCH) this.input.disabled = true;
+
+        const timeoutId = setTimeout(() => {
+            if (this.abortController) this.abortController.abort();
+        }, this.constructor.FETCH_TIMEOUT_MS);
+
+        Promise.race([fetchPromise, this.abortPromise()])
             .then(data => {
+                clearTimeout(timeoutId);
+                this.input.disabled = false;
+
                 const suggestions = (data.rows || []).map(r => ({
                     label: `${r.num} ${r.street}, ${r.cityname || r.name}, ${r.zipcode}`,
                     raw: r
@@ -164,11 +183,21 @@ class AddressSearch extends HTMLElement {
                 this.renderList(suggestions, data.errorCode);
             })
             .catch(err => {
+                clearTimeout(timeoutId);
+                this.input.disabled = false;
                 if (err.name !== 'AbortError') {
                     console.error('API error:', err);
                     this.clearList();
                 }
             });
+    }
+
+    abortPromise() {
+        return new Promise((_, reject) => {
+            this.abortController.signal.addEventListener('abort', () => {
+                reject(new DOMException('Aborted', 'AbortError'));
+            });
+        });
     }
 
     renderList(suggestions, errorCode) {
