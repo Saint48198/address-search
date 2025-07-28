@@ -30,6 +30,12 @@
 <address-search></address-search>
 
 <script>
+    // Block input while fetch is in progress
+    AddressSearch.WAIT_FOR_FETCH = true;
+
+    // Cancel request if it takes longer than 1500ms
+    AddressSearch.FETCH_TIMEOUT_MS = 1500;
+
     document.querySelector('address-search').addEventListener('address-selected', (e) => {
         console.log('Selected address:', e.detail);
     });
