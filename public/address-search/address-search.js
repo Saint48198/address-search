@@ -1,6 +1,6 @@
 class AddressSearch extends HTMLElement {
     static DEFAULT_DEBOUNCE_MS = 300;
-    static WAIT_FOR_FETCH = false;
+    static WAIT_FOR_FETCH = true;
     static FETCH_TIMEOUT_MS = 2000;
 
     constructor() {
@@ -147,35 +147,32 @@ class AddressSearch extends HTMLElement {
 
     fetchSuggestions(query) {
         const { house, street } = parseHouseStreetFrom(query);
-
         if (!street || street.length < 3) {
             this.clearList();
             return;
         }
 
-        if (this.abortController) this.abortController.abort();
-        this.abortController = new AbortController();
-
         const hostname = window.location.hostname || "";
         const apiEndPoint = hostname.includes("mivoter.org")
             ? "https://address.mivoter.org"
             : "/api/address-suggest";
+        const fetchUrl = `${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`;
 
-        const fetchPromise = fetch(`${apiEndPoint}?street=${encodeURIComponent(street)}&num=${house}&max=5`, {
-            signal: this.abortController.signal
-        }).then(res => res.json());
+        const useAbort = !this.constructor.WAIT_FOR_FETCH;
 
-        if (this.constructor.WAIT_FOR_FETCH) this.input.disabled = true;
-
-        const timeoutId = setTimeout(() => {
+        if (useAbort) {
+            // Cancel previous request
             if (this.abortController) this.abortController.abort();
-        }, this.constructor.FETCH_TIMEOUT_MS);
+            this.abortController = new AbortController();
+        }
 
-        Promise.race([fetchPromise, this.abortPromise()])
+        const controller = useAbort ? this.abortController : new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.constructor.FETCH_TIMEOUT_MS);
+
+        fetch(fetchUrl, { signal: controller.signal })
+            .then(res => res.json())
             .then(data => {
                 clearTimeout(timeoutId);
-                this.input.disabled = false;
-
                 const suggestions = (data.rows || []).map(r => ({
                     label: `${r.num} ${r.street}, ${r.cityname || r.name}, ${r.zipcode}`,
                     raw: r
@@ -184,20 +181,11 @@ class AddressSearch extends HTMLElement {
             })
             .catch(err => {
                 clearTimeout(timeoutId);
-                this.input.disabled = false;
                 if (err.name !== 'AbortError') {
                     console.error('API error:', err);
                     this.clearList();
                 }
             });
-    }
-
-    abortPromise() {
-        return new Promise((_, reject) => {
-            this.abortController.signal.addEventListener('abort', () => {
-                reject(new DOMException('Aborted', 'AbortError'));
-            });
-        });
     }
 
     renderList(suggestions, errorCode) {
